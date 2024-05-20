@@ -1,13 +1,23 @@
-function saveToFile(blob, name) {
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  document.body.appendChild(a)
-  a.style = 'display: none'
-  a.href = url
-  a.download = name
-  a.click()
-  URL.revokeObjectURL(url)
-  a.remove()
+function sendToFastAPI(blob) {
+  const formData = new FormData()
+  formData.append('file', blob, 'test.wav')
+
+  fetch('http://127.0.0.1:8000/upload', {
+    method: 'POST',
+    body: formData,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json()
+    })
+    .then((data) => {
+      console.log('File upload successful:', data)
+    })
+    .catch((error) => {
+      console.error('Error uploading file:', error)
+    })
 }
 
 function captureTabAudio() {
@@ -22,9 +32,12 @@ function captureTabAudio() {
     recorder.ondataavailable = (e) => {
       chunks.push(e.data)
     }
-    recorder.onstop = (e) => saveToFile(new Blob(chunks), 'test.wav')
+    recorder.onstop = (e) => {
+      const blob = new Blob(chunks)
+      sendToFastAPI(blob)
+    }
     recorder.start()
-    setTimeout(() => recorder.stop(), 10000)
+    setTimeout(() => recorder.stop(), 5000)
   })
 }
 
