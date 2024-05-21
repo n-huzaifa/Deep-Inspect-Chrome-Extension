@@ -105,12 +105,12 @@ function captureTabAudio() {
 }
 function handleFileUpload() {
   // Get the uploaded file
-  let inputImage = this.files[0]
+  let uploadedFile = this.files[0]
 
   // Check if the uploaded file is a .wav file
-  if (inputImage && inputImage.type === 'audio/wav') {
+  if (uploadedFile && uploadedFile.type === 'audio/wav') {
     // Create a Blob from the file data
-    let blob = new Blob([inputImage], { type: 'audio/wav' })
+    let blob = new Blob([uploadedFile], { type: 'audio/wav' })
 
     // Create an object URL for the Blob
     let objectURL = URL.createObjectURL(blob)
@@ -151,10 +151,10 @@ function handleFileUpload() {
         console.log('New Filename:', newName)
 
         // Display the new filename
-        imageName.innerText = newName
+        fileName.innerText = newName
 
         // Send the renamed file to the server
-        sendToFastAPI(inputImage, newName)
+        sendToFastAPI(uploadedFile, newName)
       } else {
         alert('Please upload a .wav file that is no longer than 60 seconds.')
       }
@@ -166,7 +166,7 @@ function handleFileUpload() {
 
 document.addEventListener('DOMContentLoaded', function () {
   let input = document.getElementById('upload-wav-button')
-  let imageName = document.getElementById('imageName')
+  let fileName = document.getElementById('fileName')
 
   input.addEventListener('change', handleFileUpload)
 
