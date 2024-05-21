@@ -103,8 +103,73 @@ function captureTabAudio() {
     startRecording(stream)
   })
 }
+function handleFileUpload() {
+  // Get the uploaded file
+  let inputImage = this.files[0]
+
+  // Check if the uploaded file is a .wav file
+  if (inputImage && inputImage.type === 'audio/wav') {
+    // Create a Blob from the file data
+    let blob = new Blob([inputImage], { type: 'audio/wav' })
+
+    // Create an object URL for the Blob
+    let objectURL = URL.createObjectURL(blob)
+
+    console.log('File Blob:', blob)
+    console.log('Object URL:', objectURL)
+
+    // Function to get the duration of the audio file
+    var getDuration = function (url, next) {
+      var _player = new Audio(url)
+      _player.addEventListener(
+        'durationchange',
+        function (e) {
+          console.log('Duration Change Event:', e)
+          if (this.duration !== Infinity) {
+            var duration = this.duration
+            console.log('Duration:', duration)
+            _player.remove()
+            next(duration)
+          }
+        },
+        false
+      )
+      _player.load()
+      _player.currentTime = 24 * 60 * 60 // Set a large current time
+      _player.volume = 0
+      _player.play()
+      // Waiting...
+    }
+
+    // Call getDuration function with the object URL and handle the duration
+    getDuration(objectURL, function (duration) {
+      console.log('Received Duration:', duration)
+      // Ensure the duration is finite and within the limit
+      if (isFinite(duration) && duration <= 60) {
+        // Rename the file
+        let newName = generateFilename()
+        console.log('New Filename:', newName)
+
+        // Display the new filename
+        imageName.innerText = newName
+
+        // Send the renamed file to the server
+        sendToFastAPI(inputImage, newName)
+      } else {
+        alert('Please upload a .wav file that is no longer than 60 seconds.')
+      }
+    })
+  } else {
+    alert('Please upload a .wav file.')
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
+  let input = document.getElementById('upload-wav-button')
+  let imageName = document.getElementById('imageName')
+
+  input.addEventListener('change', handleFileUpload)
+
   const button = document.getElementById('share-audio-button')
   button.addEventListener('click', function () {
     if (isRecording) {

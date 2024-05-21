@@ -75,3 +75,21 @@ body {
   align-items: center;
   margin-top: 30px;
 }
+
+.fileupload {
+  text-align: center;
+  padding: 3%;
+}
+
+input[type='file'] {
+  display: none;
+}
+
+label {
+  cursor: pointer;
+}
+
+#imageName {
+  color: #c1121f;
+  font-weight: bold;
+}

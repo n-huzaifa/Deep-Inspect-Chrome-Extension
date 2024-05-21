@@ -25,6 +25,29 @@
               .cls-1 {
                 fill: #c12126;
               }
+              <!-- .bar-graph {
+                position: relative; /* Add positioning for absolute bars */
+                width: 300px;
+                height: 200px;
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+                padding: 10px;
+              }
+
+              .bar {
+                position: absolute; /* Position bars relative to parent */
+                bottom: 0; /* Align bars to bottom */
+                width: 30px;
+                background-color: #007bff;
+              }
+
+              .bar:nth-child(1) {
+                left: 20px;
+              }
+
+              .bar:nth-child(2) {
+                left: 80px;
+              } -->
             </style>
           </defs>
           <path
@@ -91,6 +114,19 @@
       <h2 class="heading">Record to Spot the Human Touch in Audio!</h2>
       <button id="share-audio-button">Start Recording</button>
       <div id="timer">0s</div>
+      <p>OR</p>
+      <div class="fileupload">
+        <label for="upload-wav-button" class="upload-button">
+          <i class="fas fa-cloud-upload-alt"></i> Upload .wav File
+        </label>
+        <input type="file" accept=".wav" id="upload-wav-button" />
+        <p id="imageName"></p>
+      </div>
     </div>
+
+    <!-- <div class="bar-graph">
+      <div class="bar" style="height: 20%"></div>
+      <div class="bar" style="height: 60%"></div>
+    </div> -->
   </body>
 </html>
