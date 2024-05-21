@@ -5,6 +5,13 @@ let chunks = []
 let stream // Keep track of the captured stream
 
 function sendToFastAPI(blob) {
+  const button = document.getElementById('share-audio-button')
+  const originalText = button.textContent
+
+  // Show loader on the button
+  button.textContent = 'Uploading...'
+  button.disabled = true
+
   const formData = new FormData()
   formData.append('file', blob, 'test.wav')
 
@@ -23,6 +30,11 @@ function sendToFastAPI(blob) {
     })
     .catch((error) => {
       console.error('Error uploading file:', error)
+    })
+    .finally(() => {
+      // Restore button text
+      button.textContent = originalText
+      button.disabled = false
     })
 }
 
