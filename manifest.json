@@ -12,6 +12,7 @@
     ],
     "action": {
         "default_popup": "home.html",
-        "default_action": "home.js"
+        "default_action": "home.js",
+        "default_icon":"logo128.png"
     }
   }

@@ -3,8 +3,9 @@ let recorder
 let isRecording = false // Track recording state
 let chunks = []
 let stream // Keep track of the captured stream
+let recordingTimeout // To store the timeout ID
 
-function sendToFastAPI(blob) {
+function sendToFastAPI(blob, filename) {
   const button = document.getElementById('share-audio-button')
   const originalText = button.textContent
 
@@ -13,7 +14,7 @@ function sendToFastAPI(blob) {
   button.disabled = true
 
   const formData = new FormData()
-  formData.append('file', blob, 'test.wav')
+  formData.append('file', blob, filename)
 
   fetch('http://127.0.0.1:8000/upload', {
     method: 'POST',
@@ -38,6 +39,13 @@ function sendToFastAPI(blob) {
     })
 }
 
+function generateFilename() {
+  const date = new Date()
+  const dateString = date.toISOString().replace(/:/g, '-')
+  const randomHash = Math.random().toString(36).substring(2, 15)
+  return `recording_${dateString}_${randomHash}.wav`
+}
+
 function startRecording(stream) {
   const context = new AudioContext()
   const newStream = context.createMediaStreamSource(stream)
@@ -49,13 +57,21 @@ function startRecording(stream) {
   }
   recorder.onstop = () => {
     clearInterval(intervalId)
-    sendToFastAPI(new Blob(chunks))
+    clearTimeout(recordingTimeout) // Clear the timeout if recording stops before the limit
+    const filename = generateFilename()
+    sendToFastAPI(new Blob(chunks), filename)
+
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
       stream = null
     }
   }
   recorder.start()
+
+  // Set a timeout to automatically stop the recording after 60 seconds
+  recordingTimeout = setTimeout(() => {
+    stopRecording()
+  }, 60000) // 60000 milliseconds = 60 seconds
 }
 
 function stopRecording() {
