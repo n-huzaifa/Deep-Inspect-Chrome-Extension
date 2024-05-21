@@ -119,6 +119,7 @@ function handleFileUpload() {
     console.log('Object URL:', objectURL)
 
     // Function to get the duration of the audio file
+    // getDirection function used from https://stackoverflow.com/a/41245574
     var getDuration = function (url, next) {
       var _player = new Audio(url)
       _player.addEventListener(
