@@ -57,6 +57,52 @@ function displayApiResponse(data) {
     <p>Predictions: ${data.predictions}</p>
     <p>Probabilities: ${JSON.stringify(data.probabilities)}</p>
   `
+  const likeButton = document.createElement('button')
+  likeButton.textContent = 'Like'
+  likeButton.addEventListener('click', () => {
+    // Call API with user's choice (like)
+    sendDataFeedback(data.filename, data.file_path, 'like')
+  })
+
+  const dislikeButton = document.createElement('button')
+  dislikeButton.textContent = 'Dislike'
+  dislikeButton.addEventListener('click', () => {
+    // Call API with user's choice (dislike)
+    sendDataFeedback(data.filename, data.file_path, 'dislike')
+  })
+
+  responseContainer.appendChild(likeButton)
+  responseContainer.appendChild(dislikeButton)
+}
+function sendDataFeedback(filename, filePath, choice) {
+  // Prepare data to send
+  const formData = { filename, filePath, choice }
+
+  // Convert the object to JSON string
+  const jsonData = JSON.stringify(formData)
+
+  // Send data to the API
+  fetch('http://localhost:8000/data-collect', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonData,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json()
+    })
+    .then((data) => {
+      console.log('Data feedback sent successfully:', data)
+      // Handle response if needed
+    })
+    .catch((error) => {
+      console.error('Error sending data feedback:', error)
+      // Handle error if needed
+    })
 }
 
 function displayApiError(error) {
