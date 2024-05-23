@@ -28,15 +28,42 @@ function sendToFastAPI(blob, filename) {
     })
     .then((data) => {
       console.log('File upload successful:', data)
+      displayApiResponse(data) // Function to display API response on the UI
     })
     .catch((error) => {
       console.error('Error uploading file:', error)
+      displayApiError(error) // Function to display error message on the UI
     })
     .finally(() => {
       // Restore button text
       button.textContent = originalText
       button.disabled = false
     })
+}
+
+function displayApiResponse(data) {
+  const responseContainer = document.getElementById('response-container')
+  const predictions = data.predictions
+  const genuineCount = predictions.filter((pred) => pred === 0).length
+  const deepfakeCount = predictions.filter((pred) => pred === 1).length
+  const totalPredictions = predictions.length
+  const genuinePercentage = ((genuineCount / totalPredictions) * 100).toFixed(2)
+  const deepfakePercentage = ((deepfakeCount / totalPredictions) * 100).toFixed(2)
+
+  responseContainer.innerHTML = `
+    <p>Filename: ${data.filename}</p>
+    <p>File Path: ${data.file_path}</p>
+    <p>${genuinePercentage}% is genuine and ${deepfakePercentage}% is deepfake</p>
+    <p>Predictions: ${data.predictions}</p>
+    <p>Probabilities: ${JSON.stringify(data.probabilities)}</p>
+  `
+}
+
+function displayApiError(error) {
+  const responseContainer = document.getElementById('response-container')
+  responseContainer.innerHTML = `
+    <p>Error: ${error.message}</p>
+  `
 }
 
 function generateFilename() {
