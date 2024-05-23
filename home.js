@@ -47,31 +47,40 @@ function generateFilename() {
 }
 
 function startRecording(stream) {
-  const context = new AudioContext()
-  const newStream = context.createMediaStreamSource(stream)
-  newStream.connect(context.destination)
+  const context = new AudioContext({ sampleRate: 48000 })
+  const source = context.createMediaStreamSource(stream)
 
-  recorder = new MediaRecorder(stream)
-  recorder.ondataavailable = (e) => {
-    chunks.push(e.data)
-  }
-  recorder.onstop = () => {
-    clearInterval(intervalId)
-    clearTimeout(recordingTimeout) // Clear the timeout if recording stops before the limit
-    const filename = generateFilename()
-    sendToFastAPI(new Blob(chunks), filename)
+  context.audioWorklet
+    .addModule('audio-processor.js')
+    .then(() => {
+      const audioProcessor = new AudioWorkletNode(context, 'audio-processor')
+      source.connect(audioProcessor)
+      audioProcessor.connect(context.destination)
 
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      stream = null
-    }
-  }
-  recorder.start()
+      recorder = new MediaRecorder(stream)
+      recorder.ondataavailable = (e) => {
+        chunks.push(e.data)
+      }
+      recorder.onstop = () => {
+        clearInterval(intervalId)
+        clearTimeout(recordingTimeout)
+        const filename = generateFilename()
+        sendToFastAPI(new Blob(chunks, { type: 'audio/wav' }), filename)
 
-  // Set a timeout to automatically stop the recording after 60 seconds
-  recordingTimeout = setTimeout(() => {
-    stopRecording()
-  }, 60000) // 60000 milliseconds = 60 seconds
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop())
+          stream = null
+        }
+      }
+      recorder.start()
+
+      recordingTimeout = setTimeout(() => {
+        stopRecording()
+      }, 60000)
+    })
+    .catch((error) => {
+      console.error('Error loading AudioWorkletNode:', error)
+    })
 }
 
 function stopRecording() {
@@ -103,6 +112,7 @@ function captureTabAudio() {
     startRecording(stream)
   })
 }
+
 function handleFileUpload() {
   // Get the uploaded file
   let uploadedFile = this.files[0]
@@ -163,6 +173,64 @@ function handleFileUpload() {
   } else {
     alert('Please upload a .wav file.')
   }
+}
+
+function encodeToWav(channelData) {
+  const numChannels = 1 // Mono audio
+  const sampleRate = 48000 // Same as the AudioContext sample rate
+  const bytesPerSample = 2 // 16-bit output
+  const bitsPerSample = 16
+
+  const buffer = new ArrayBuffer(channelData.length * numChannels * bytesPerSample)
+  const view = new DataView(buffer)
+
+  let offset = 0
+  for (let i = 0; i < channelData.length; i++) {
+    const sample = channelData[i]
+    const value = Math.max(-1, Math.min(1, sample))
+    const output = value < 0 ? value * 0x8000 : value * 0x7fff
+    view.setInt16(offset, output, true)
+    offset += bytesPerSample
+  }
+
+  const wavBlob = new Blob([encodeWavHeader(buffer.byteLength, numChannels, sampleRate), buffer], { type: 'audio/wav' })
+  sendToFastAPI(wavBlob, generateFilename())
+}
+
+function encodeWavHeader(length, numChannels, sampleRate) {
+  const dataLength = length - 44 // Length of the raw audio data
+  const buffer = new ArrayBuffer(44)
+  const view = new DataView(buffer)
+
+  const writeString = (offset, string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i))
+    }
+  }
+
+  const writeUint32 = (offset, value) => {
+    view.setUint32(offset, value, true)
+  }
+
+  const writeUint16 = (offset, value) => {
+    view.setUint16(offset, value, true)
+  }
+
+  writeString(0, 'RIFF') // ChunkID
+  writeUint32(4, 32 + dataLength) // ChunkSize
+  writeString(8, 'WAVE') // Format
+  writeString(12, 'fmt ') // Subchunk1ID
+  writeUint32(16, 16) // Subchunk1Size
+  writeUint16(20, 1) // AudioFormat (1 = PCM)
+  writeUint16(22, numChannels) // NumChannels
+  writeUint32(24, sampleRate) // SampleRate
+  writeUint32(28, sampleRate * 2) // ByteRate
+  writeUint16(32, 2) // BlockAlign
+  writeUint16(34, 16) // BitsPerSample
+  writeString(36, 'data') // Subchunk2ID
+  writeUint32(40, dataLength) // Subchunk2Size
+
+  return view.buffer
 }
 
 document.addEventListener('DOMContentLoaded', function () {
