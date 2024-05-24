@@ -4,6 +4,7 @@ let isRecording = false // Track recording state
 let chunks = []
 let stream // Keep track of the captured stream
 let recordingTimeout // To store the timeout ID
+let advance = false
 
 function sendToFastAPI(blob, filename) {
   const button = document.getElementById('share-audio-button')
@@ -41,8 +42,29 @@ function sendToFastAPI(blob, filename) {
     })
 }
 
+function calculatePercentages(data) {
+  let genuineTotal = 0
+  let deepfakeTotal = 0
+  const totalCount = data.length
+
+  data.forEach((pair) => {
+    genuineTotal += pair[0]
+    deepfakeTotal += pair[1]
+  })
+
+  const genuinePercentage = (genuineTotal / totalCount) * 100
+  const deepfakePercentage = (deepfakeTotal / totalCount) * 100
+
+  const str = `<p class="gpercentage">Genuine Percentage: ${genuinePercentage}</p>   
+              <p class="predictions">deepfakepercentage: ${deepfakePercentage}</p>
+              `
+  return str
+}
+
 function displayApiResponse(data) {
   const responseContainer = document.getElementById('response-container')
+  const left = document.getElementById('left')
+  left.style.display = 'inline'
   const predictions = data.predictions
   const genuineCount = predictions.filter((pred) => pred === 0).length
   const deepfakeCount = predictions.filter((pred) => pred === 1).length
@@ -50,30 +72,74 @@ function displayApiResponse(data) {
   const genuinePercentage = ((genuineCount / totalPredictions) * 100).toFixed(2)
   const deepfakePercentage = ((deepfakeCount / totalPredictions) * 100).toFixed(2)
 
-  responseContainer.innerHTML = `
-    <p>Filename: ${data.filename}</p>
-    <p>File Path: ${data.file_path}</p>
-    <p>${genuinePercentage}% is genuine and ${deepfakePercentage}% is deepfake</p>
-    <p>Predictions: ${data.predictions}</p>
-    <p>Probabilities: ${JSON.stringify(data.probabilities)}</p>
-  `
-  const likeButton = document.createElement('button')
-  likeButton.textContent = 'Like'
-  likeButton.addEventListener('click', () => {
-    // Call API with user's choice (like)
-    sendDataFeedback(data.filename, data.file_path, 'like')
-  })
+  // Function to update the UI
+  function updateUI() {
+    responseContainer.innerHTML = ''
 
-  const dislikeButton = document.createElement('button')
-  dislikeButton.textContent = 'Dislike'
-  dislikeButton.addEventListener('click', () => {
-    // Call API with user's choice (dislike)
-    sendDataFeedback(data.filename, data.file_path, 'dislike')
-  })
+    if (advance) {
+      const advanceContent = `
+        <p class="ResHead">Advance:</p>
+        <p class="Fname">Filename: ${data.filename}</p>
+        <p class="Fpath">File Path: ${data.file_path}</p>
+        <p class="genuinePercentage">${genuinePercentage}% is genuine</p>
+        <p class="deepfakePercentage">${deepfakePercentage}% is deepfake</p>
+        <p class="predictions">Predictions: ${data.predictions}</p>
+        <h5>Probabilities: </h5>
+        <p class="probability">${calculatePercentages(data.probabilities)}</p>
+    `
 
-  responseContainer.appendChild(likeButton)
-  responseContainer.appendChild(dislikeButton)
+      responseContainer.insertAdjacentHTML('beforeend', advanceContent)
+    } else {
+      left.style.width = '' // Reset width when not in advance mode
+      const basicContent = `
+          <p class="ResHead">Basic:</p>
+          <p class="genuinePercentage">${genuinePercentage}% is genuine</p>
+          <p class="deepfakePercentage">${deepfakePercentage}% is deepfake</p>
+      `
+      responseContainer.insertAdjacentHTML('beforeend', basicContent)
+    }
+
+    const buttonContainer = document.createElement('div')
+    buttonContainer.classList.add('advBtnCont')
+
+    const showMoreButton = document.createElement('button')
+    showMoreButton.classList.add('advanceBtn')
+    showMoreButton.textContent = 'Show More'
+
+    const likeButton = document.createElement('button')
+    likeButton.classList.add('like')
+    likeButton.style.border = 'none'
+    likeButton.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>'
+    likeButton.addEventListener('click', () => {
+      // Call API with user's choice (like)
+      sendDataFeedback(data.filename, data.file_path, 'like')
+    })
+
+    const dislikeButton = document.createElement('button')
+    dislikeButton.classList.add('dislike')
+    dislikeButton.style.border = 'none'
+    dislikeButton.innerHTML = '<i class="fa-solid fa-thumbs-down"></i>'
+    dislikeButton.addEventListener('click', () => {
+      // Call API with user's choice (dislike)
+      sendDataFeedback(data.filename, data.file_path, 'dislike')
+    })
+
+    showMoreButton.addEventListener('click', () => {
+      advance = !advance // Toggle the advance state
+      updateUI() // Update the UI
+    })
+
+    buttonContainer.appendChild(showMoreButton)
+    buttonContainer.appendChild(likeButton)
+    buttonContainer.appendChild(dislikeButton)
+
+    responseContainer.appendChild(buttonContainer)
+  }
+
+  // Initial UI update
+  updateUI()
 }
+
 function sendDataFeedback(filename, filePath, choice) {
   // Prepare data to send
   const formData = { filename, filePath, choice }
@@ -122,6 +188,7 @@ function generateFilename() {
 function startRecording(stream) {
   const context = new AudioContext({ sampleRate: 48000 })
   const source = context.createMediaStreamSource(stream)
+  fileName.innerText = ''
 
   context.audioWorklet
     .addModule('audio-processor.js')
@@ -189,7 +256,8 @@ function captureTabAudio() {
 function handleFileUpload() {
   // Get the uploaded file
   let uploadedFile = this.files[0]
-
+  const timerElement = document.getElementById('timer')
+  timerElement.style.display = 'none'
   // Check if the uploaded file is a .wav file
   if (uploadedFile && uploadedFile.type === 'audio/wav') {
     // Create a Blob from the file data
@@ -324,4 +392,16 @@ document.addEventListener('DOMContentLoaded', function () {
       captureTabAudio()
     }
   })
+})
+
+function toggleShowMore() {
+  !advance
+  displayApiResponse()
+  console.log('advance clicked')
+}
+
+document.body.addEventListener('click', function (event) {
+  if (event.target && event.target.classList.contains('advanceBtn')) {
+    toggleShowMore()
+  }
 })
