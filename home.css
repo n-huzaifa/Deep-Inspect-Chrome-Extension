@@ -5,10 +5,90 @@
 
 body {
   background-color: #fdf0d5;
-  width: 300px;
-  height: 350px;
+  display: flex;
+  flex-direction: row-reverse;
   margin: 0;
   padding: 0;
+}
+
+#right {
+  width: 300px;
+  min-height: 350px;
+}
+
+#left {
+  display: none;
+  background-color: #ffe8b9;
+  width: 300px;
+  min-height: 450px;
+  height: fit-content;
+  padding: 10px 10px 20px 20px;
+  box-sizing: border-box;
+  word-wrap: break-word; /* Ensure long words wrap to the next line */
+  overflow-wrap: break-word; /* Ensure long words wrap to the next line */
+}
+
+.probability {
+  font-size: 14px;
+}
+
+.genuinePercentage {
+  color: green;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.advBtnCont {
+  display: flex;
+}
+
+.like {
+  color: white;
+  height: 40px;
+  width: 40px;
+  background-color: #c1121f;
+  border-radius: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  margin-left: 20px;
+}
+
+.dislike {
+  color: white;
+  height: 40px;
+  width: 40px;
+  background-color: #c1121f;
+  border-radius: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+.like:hover {
+  opacity: 80%;
+}
+
+.dislike:hover {
+  opacity: 80%;
+}
+
+.deepfakePercentage {
+  color: #c1121f;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.ResHead {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#response-container {
+  font-size: 14px;
 }
 
 .top {
@@ -25,6 +105,22 @@ body {
   margin-left: 25px;
   margin-top: 20px;
   width: 30px;
+}
+
+.advanceBtn {
+  margin-top: 10px;
+  background-color: #c1121f;
+  color: #fdf0d5;
+  border-radius: 7px;
+  font-weight: 500;
+  font-size: 14px;
+  height: 40px;
+  width: 120px;
+  border: none;
+}
+
+.advanceBtn:hover {
+  opacity: 80%;
 }
 
 .container {
